@@ -24,6 +24,15 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
+// --- VERSIÓN FINAL PARA DESPLIEGUE ---
+const CONFIG = {
+
+  CALENDLY_URL: "https://calendly.com/angel_global_ads-metricaia/revision-estrategico-meta-ads", // CAMBIA ESTO
+  WEBHOOK_URL: import.meta.env.VITE_WEBHOOK_URL,
+};
+// ----------------------------
+
+
 // Componentes del Modal y Formulario
 const Modal = ({ isOpen, onClose, children }: { isOpen: boolean, onClose: () => void, children: React.ReactNode }) => {
   if (!isOpen) return null;
@@ -68,7 +77,8 @@ const LeadForm = ({ onClose, selectedPlan: initialPlan }: { onClose: () => void,
     e.preventDefault();
     setIsSubmitting(true);
     
-    const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+    const webhookUrl = CONFIG.WEBHOOK_URL;
+
     
     try {
       // Si no hay URL configurada, simulamos éxito para que puedas probar el flujo localmente
@@ -76,25 +86,24 @@ const LeadForm = ({ onClose, selectedPlan: initialPlan }: { onClose: () => void,
         console.warn("Webhook no configurado. Simulando envío...");
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
-        const response = await fetch(webhookUrl, {
+        // Usamos text/plain para evitar errores de CORS/Preflight
+        await fetch(webhookUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
             ...formData,
             fecha: new Date().toISOString()
           })
         });
-
-        if (!response.ok) throw new Error("Fallo en el servidor");
       }
 
       setIsSuccess(true);
       
-      // Abre Calendly después de 2 segundos de éxito
+      // Redirigir en la misma pestaña después de 2.5 seg para evitar bloqueos de popups
       setTimeout(() => {
-        window.open('https://calendly.com/tu-usuario-aqui', '_blank');
-        onClose();
-      }, 2000);
+        window.location.href = CONFIG.CALENDLY_URL;
+      }, 2500);
 
     } catch (error) {
       console.error(error);
@@ -112,8 +121,8 @@ const LeadForm = ({ onClose, selectedPlan: initialPlan }: { onClose: () => void,
         </div>
         <h3 className="text-2xl font-bold mb-2">¡Solicitud Recibida!</h3>
         <p className="text-slate-400 mb-6">Te estamos redirigiendo para que elijas la fecha y hora de nuestra reunión...</p>
-        <Button variant="outline" onClick={onClose} className="w-full">
-          Cerrar
+        <Button variant="primary" onClick={() => window.location.href = CONFIG.CALENDLY_URL} className="w-full">
+          Si no redirige, clic aquí
         </Button>
       </div>
     );
@@ -238,7 +247,8 @@ const EliteForm = ({ onClose }: { onClose: () => void }) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+    const webhookUrl = CONFIG.WEBHOOK_URL;
+
     
     try {
       if (!webhookUrl || webhookUrl.includes("TU_URL")) {
@@ -247,7 +257,8 @@ const EliteForm = ({ onClose }: { onClose: () => void }) => {
       } else {
         await fetch(webhookUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
             ...formData,
             tipo: "Elite Diagnosis",
@@ -256,6 +267,8 @@ const EliteForm = ({ onClose }: { onClose: () => void }) => {
         });
       }
       setIsSuccess(true);
+
+
       setTimeout(onClose, 2500);
     } catch (error) {
       alert("Error al enviar. Intenta de nuevo.");

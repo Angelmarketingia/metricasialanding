@@ -86,15 +86,19 @@ const LeadForm = ({ onClose, selectedPlan: initialPlan }: { onClose: () => void,
         console.warn("Webhook no configurado. Simulando envío...");
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
-        // Usamos text/plain para evitar errores de CORS/Preflight
-        await fetch(webhookUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            ...formData,
-            fecha: new Date().toISOString()
-          })
+        // GET con params: el método más confiable para Google Apps Script
+        const params = new URLSearchParams({
+          nombre: formData.nombre,
+          empresa: formData.empresa,
+          email: formData.email,
+          telefono: formData.telefono,
+          plan: formData.plan,
+          sitioWeb: formData.sitioWeb || "",
+          fecha: new Date().toISOString()
+        });
+        await fetch(`${webhookUrl}?${params.toString()}`, {
+          method: 'GET',
+          mode: 'no-cors'
         });
       }
 
@@ -104,6 +108,7 @@ const LeadForm = ({ onClose, selectedPlan: initialPlan }: { onClose: () => void,
       setTimeout(() => {
         window.location.href = CONFIG.CALENDLY_URL;
       }, 2500);
+
 
     } catch (error) {
       console.error(error);
@@ -255,18 +260,24 @@ const EliteForm = ({ onClose }: { onClose: () => void }) => {
         console.warn("Webhook no configurado. Simulando envío Elite...");
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            ...formData,
-            tipo: "Elite Diagnosis",
-            fecha: new Date().toISOString()
-          })
+        // GET con params: el método más confiable para Google Apps Script
+        const eliteParams = new URLSearchParams({
+          nombre: formData.nombre,
+          empresa: formData.empresa,
+          email: formData.email,
+          telefono: formData.telefono,
+          presupuesto: formData.presupuesto || "",
+          yaPauta: formData.yaPauta || "",
+          tipo: "Elite Diagnosis",
+          fecha: new Date().toISOString()
+        });
+        await fetch(`${webhookUrl}?${eliteParams.toString()}`, {
+          method: 'GET',
+          mode: 'no-cors'
         });
       }
       setIsSuccess(true);
+
 
 
       setTimeout(onClose, 2500);
